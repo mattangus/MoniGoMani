@@ -6,6 +6,10 @@ from pandas import DataFrame
 import pandas as pd
 import freqtrade.vendor.qtpylib.indicators as qtpylib
 from freqtrade.strategy import IStrategy, CategoricalParameter, IntParameter, merge_informative_pair, timeframe_to_minutes
+import os
+import json
+from datetime import datetime
+from typing import Tuple
 # ^ TA-Lib Autofill mostly broken in JetBrains Products,
 # ta._ta_lib.<function_name> can temporarily be used while writing as a workaround
 # Then change back to ta.<function_name> so IDE won't nag about accessing a protected member of TA-Lib
@@ -52,94 +56,88 @@ class MoniGoManiHyperStrategy(IStrategy):
 
     # Buy hyperspace params:
     buy_params = {
-        'buy___trades_when_downwards': True,
-        'buy___trades_when_sideways': False,
-        'buy___trades_when_upwards': True,
-        'buy__downwards_trend_total_signal_needed': 4,
-        'buy__sideways_trend_total_signal_needed': 17,
-        'buy__upwards_trend_total_signal_needed': 50,
-        'buy_downwards_trend_adx_strong_up_weight': 71,
-        'buy_downwards_trend_bollinger_bands_weight': 54,
-        'buy_downwards_trend_ema_long_golden_cross_weight': 0,
-        'buy_downwards_trend_ema_short_golden_cross_weight': 87,
-        'buy_downwards_trend_macd_weight': 47,
-        'buy_downwards_trend_rsi_weight': 62,
-        'buy_downwards_trend_sma_long_golden_cross_weight': 56,
-        'buy_downwards_trend_sma_short_golden_cross_weight': 46,
+        'buy___trades_when_trend': 7,
+        'buy__downwards_trend_total_signal_needed': 62,
+        'buy__sideways_trend_total_signal_needed': 52,
+        'buy__upwards_trend_total_signal_needed': 99,
+        'buy_downwards_trend_adx_strong_up_weight': 58,
+        'buy_downwards_trend_bollinger_bands_weight': 44,
+        'buy_downwards_trend_ema_long_golden_cross_weight': 50,
+        'buy_downwards_trend_ema_short_golden_cross_weight': 8,
+        'buy_downwards_trend_macd_weight': 12,
+        'buy_downwards_trend_rsi_weight': 20,
+        'buy_downwards_trend_sma_long_golden_cross_weight': 69,
+        'buy_downwards_trend_sma_short_golden_cross_weight': 93,
         'buy_downwards_trend_vwap_cross_weight': 44,
-        'buy_sideways_trend_adx_strong_up_weight': 65,
-        'buy_sideways_trend_bollinger_bands_weight': 25,
-        'buy_sideways_trend_ema_long_golden_cross_weight': 74,
-        'buy_sideways_trend_ema_short_golden_cross_weight': 59,
-        'buy_sideways_trend_macd_weight': 64,
-        'buy_sideways_trend_rsi_weight': 52,
-        'buy_sideways_trend_sma_long_golden_cross_weight': 4,
-        'buy_sideways_trend_sma_short_golden_cross_weight': 86,
-        'buy_sideways_trend_vwap_cross_weight': 57,
-        'buy_upwards_trend_adx_strong_up_weight': 13,
-        'buy_upwards_trend_bollinger_bands_weight': 21,
-        'buy_upwards_trend_ema_long_golden_cross_weight': 71,
-        'buy_upwards_trend_ema_short_golden_cross_weight': 12,
-        'buy_upwards_trend_macd_weight': 94,
-        'buy_upwards_trend_rsi_weight': 24,
-        'buy_upwards_trend_sma_long_golden_cross_weight': 14,
-        'buy_upwards_trend_sma_short_golden_cross_weight': 26,
-        'buy_upwards_trend_vwap_cross_weight': 23
+        'buy_sideways_trend_adx_strong_up_weight': 59,
+        'buy_sideways_trend_bollinger_bands_weight': 38,
+        'buy_sideways_trend_ema_long_golden_cross_weight': 96,
+        'buy_sideways_trend_ema_short_golden_cross_weight': 8,
+        'buy_sideways_trend_macd_weight': 74,
+        'buy_sideways_trend_rsi_weight': 79,
+        'buy_sideways_trend_sma_long_golden_cross_weight': 71,
+        'buy_sideways_trend_sma_short_golden_cross_weight': 79,
+        'buy_sideways_trend_vwap_cross_weight': 84,
+        'buy_upwards_trend_adx_strong_up_weight': 32,
+        'buy_upwards_trend_bollinger_bands_weight': 67,
+        'buy_upwards_trend_ema_long_golden_cross_weight': 87,
+        'buy_upwards_trend_ema_short_golden_cross_weight': 20,
+        'buy_upwards_trend_macd_weight': 65,
+        'buy_upwards_trend_rsi_weight': 66,
+        'buy_upwards_trend_sma_long_golden_cross_weight': 53,
+        'buy_upwards_trend_sma_short_golden_cross_weight': 38,
+        'buy_upwards_trend_vwap_cross_weight': 44
     }
 
     # Sell hyperspace params:
     sell_params = {
-        'sell___trades_when_downwards': True,
-        'sell___trades_when_sideways': True,
-        'sell___trades_when_upwards': False,
-        'sell__downwards_trend_total_signal_needed': 87,
-        'sell__sideways_trend_total_signal_needed': 22,
-        'sell__upwards_trend_total_signal_needed': 89,
-        'sell_downwards_trend_adx_strong_down_weight': 34,
-        'sell_downwards_trend_bollinger_bands_weight': 83,
-        'sell_downwards_trend_ema_long_death_cross_weight': 0,
-        'sell_downwards_trend_ema_short_death_cross_weight': 42,
-        'sell_downwards_trend_macd_weight': 0,
-        'sell_downwards_trend_rsi_weight': 49,
-        'sell_downwards_trend_sma_long_death_cross_weight': 40,
-        'sell_downwards_trend_sma_short_death_cross_weight': 0,
-        'sell_downwards_trend_vwap_cross_weight': 12,
-        'sell_sideways_trend_adx_strong_down_weight': 45,
-        'sell_sideways_trend_bollinger_bands_weight': 94,
-        'sell_sideways_trend_ema_long_death_cross_weight': 8,
-        'sell_sideways_trend_ema_short_death_cross_weight': 33,
-        'sell_sideways_trend_macd_weight': 65,
-        'sell_sideways_trend_rsi_weight': 11,
-        'sell_sideways_trend_sma_long_death_cross_weight': 57,
-        'sell_sideways_trend_sma_short_death_cross_weight': 23,
-        'sell_sideways_trend_vwap_cross_weight': 55,
-        'sell_upwards_trend_adx_strong_down_weight': 54,
-        'sell_upwards_trend_bollinger_bands_weight': 0,
-        'sell_upwards_trend_ema_long_death_cross_weight': 36,
-        'sell_upwards_trend_ema_short_death_cross_weight': 12,
-        'sell_upwards_trend_macd_weight': 90,
-        'sell_upwards_trend_rsi_weight': 52,
-        'sell_upwards_trend_sma_long_death_cross_weight': 97,
-        'sell_upwards_trend_sma_short_death_cross_weight': 18,
-        'sell_upwards_trend_vwap_cross_weight': 51
+        'sell___trades_when_trend': 2,
+        'sell__downwards_trend_total_signal_needed': 66,
+        'sell__sideways_trend_total_signal_needed': 74,
+        'sell__upwards_trend_total_signal_needed': 0,
+        'sell_downwards_trend_adx_strong_down_weight': 69,
+        'sell_downwards_trend_bollinger_bands_weight': 86,
+        'sell_downwards_trend_ema_long_death_cross_weight': 19,
+        'sell_downwards_trend_ema_short_death_cross_weight': 50,
+        'sell_downwards_trend_macd_weight': 13,
+        'sell_downwards_trend_rsi_weight': 83,
+        'sell_downwards_trend_sma_long_death_cross_weight': 31,
+        'sell_downwards_trend_sma_short_death_cross_weight': 85,
+        'sell_downwards_trend_vwap_cross_weight': 3,
+        'sell_sideways_trend_adx_strong_down_weight': 15,
+        'sell_sideways_trend_bollinger_bands_weight': 71,
+        'sell_sideways_trend_ema_long_death_cross_weight': 29,
+        'sell_sideways_trend_ema_short_death_cross_weight': 29,
+        'sell_sideways_trend_macd_weight': 8,
+        'sell_sideways_trend_rsi_weight': 57,
+        'sell_sideways_trend_sma_long_death_cross_weight': 80,
+        'sell_sideways_trend_sma_short_death_cross_weight': 30,
+        'sell_sideways_trend_vwap_cross_weight': 66,
+        'sell_upwards_trend_adx_strong_down_weight': 25,
+        'sell_upwards_trend_bollinger_bands_weight': 12,
+        'sell_upwards_trend_ema_long_death_cross_weight': 54,
+        'sell_upwards_trend_ema_short_death_cross_weight': 60,
+        'sell_upwards_trend_macd_weight': 29,
+        'sell_upwards_trend_rsi_weight': 12,
+        'sell_upwards_trend_sma_long_death_cross_weight': 45,
+        'sell_upwards_trend_sma_short_death_cross_weight': 17,
+        'sell_upwards_trend_vwap_cross_weight': 55
     }
 
     # ROI table:
     minimal_roi = {
-        "0": 0.38648,
-        "335": 0.15347,
-        "674": 0.05148,
-        "1928": 0
+        "0": 200
     }
 
     # Stoploss:
-    stoploss = -0.34755
+    stoploss = -2
 
     # Trailing stop:
-    trailing_stop = True
-    trailing_stop_positive = 0.01156
-    trailing_stop_positive_offset = 0.02329
-    trailing_only_offset_is_reached = True
+    trailing_stop = False
+    trailing_stop_positive = 0.06032
+    trailing_stop_positive_offset = 0.15267
+    trailing_only_offset_is_reached = False
+
 
     ####################################################################################################################
     #                                     END OF HYPEROPT RESULTS COPY-PASTE SECTION                                   #
@@ -239,13 +237,14 @@ class MoniGoManiHyperStrategy(IStrategy):
     # (Signals can be turned off by allocating 0 or turned into an override by setting them equal to or higher then
     # total_buy_signal_needed)
 
+    # Create a list of valid bitmasks except for False, False, False (or 0) so that there is at leaset one trend being used
+    # The bitmask order is downward-sideways-upwards. So a value of 5 (101 in binary) means trade down and up, but not sideways.
+    # bitmasks are needed since freqtrade complains if this is a tuple or a list of bool values.
+    trades_trend_list = [int(t1) << 2 | int(t2) << 1 | int(t3) << 0 for t1 in [True, False] for t2 in [True, False] for t3 in [True, False] if not (not t1 and not t2 and not t3)]
+
     # React to Buy Signals when certain trends are detected (False would disable trading in said trend)
-    buy___trades_when_downwards = \
-        CategoricalParameter([True, False], default=True, space='buy', optimize=False, load=True)
-    buy___trades_when_sideways = \
-        CategoricalParameter([True, False], default=True, space='buy', optimize=False, load=True)
-    buy___trades_when_upwards = \
-        CategoricalParameter([True, False], default=True, space='buy', optimize=False, load=True)
+    buy___trades_when_trend = \
+        CategoricalParameter(trades_trend_list, default=7, space='buy', optimize=True, load=True)
 
     # Downwards Trend Buy
     # -------------------
@@ -338,12 +337,8 @@ class MoniGoManiHyperStrategy(IStrategy):
     # total_buy_signal_needed)
 
     # React to Sell Signals when certain trends are detected (False would disable trading in said trend)
-    sell___trades_when_downwards = \
-        CategoricalParameter([True, False], default=True, space='sell', optimize=True, load=True)
-    sell___trades_when_sideways = \
-        CategoricalParameter([True, False], default=True, space='sell', optimize=True, load=True)
-    sell___trades_when_upwards = \
-        CategoricalParameter([True, False], default=False, space='sell', optimize=True, load=True)
+    sell___trades_when_trend = \
+        CategoricalParameter(trades_trend_list, default=7, space='sell', optimize=True, load=True)
 
     # Downwards Trend Sell
     # --------------------
@@ -435,9 +430,39 @@ class MoniGoManiHyperStrategy(IStrategy):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.dataset = None
         if (self.dp is not None) and (self.dp.runmode.value in ('backtest', 'hyperopt')):
             self.timeframe = self.backtest_timeframe
             print(f"Auto updating timeframe to {self.timeframe}")
+
+            self.load_dataset(kwargs["config"])
+
+
+    def load_dataset(self, config):
+        data_file = ""
+        if "dataset_location" in config:
+            data_file = config["dataset_location"]
+            if os.path.exists(data_file):
+                with open(data_file, "r") as f:
+                    self.dataset = json.load(f)["dataset"]
+                
+                for split in self.dataset:
+                    for pair in self.dataset[split]:
+                        for item in self.dataset[split][pair]:
+                            item[0] = pd.Timestamp(datetime.strptime(item[0], "%Y-%m-%d"), tz=0)
+                            item[1] = pd.Timestamp(datetime.strptime(item[1], "%Y-%m-%d"), tz=0)
+        if self.dataset is None:
+            print(f"WARNING: No dataset found at '{data_file}' for testing. Using whole timeframe.")
+
+    def get_bitmask_values(self, bitmask: int) -> Tuple[bool, bool, bool]:
+        
+        downwards = bool(bitmask >> 2 & 0x1)
+        sideways = bool(bitmask >> 1 & 0x1)
+        upwards = bool(bitmask >> 0 & 0x1)
+        # for debugging
+        # print(f"{bitmask:b} -> {(downwards, sideways, upwards)}")
+
+        return downwards, sideways, upwards
 
     def informative_pairs(self):
         """
@@ -453,6 +478,30 @@ class MoniGoManiHyperStrategy(IStrategy):
         pairs = self.dp.current_whitelist()
         informative_pairs = [(pair, self.informative_timeframe) for pair in pairs]
         return informative_pairs
+    
+    def _update_dataset(self, dataframe: DataFrame, metadata: dict, column: str, value: int, flip_last: bool):
+        dates = self.dataset["train"][metadata["pair"]]
+        mask = None
+        for start, end, *_ in dates:
+            if mask is None:
+                mask = (dataframe.date < start) | (dataframe.date > end)
+            else:
+                mask = mask & ((dataframe.date < start) | (dataframe.date > end))
+        dataframe.loc[mask, column] = value
+        if flip_last:
+            flipped = ~mask.shift(1).fillna(True) & mask
+            dataframe.loc[flipped, column] = 1 - value
+        return dataframe
+
+    def update_dataset_buys(self, dataframe: DataFrame, metadata: dict, column: str, value: int):
+        if (self.dp is not None) and (self.dp.runmode.value in ('backtest', 'hyperopt')):
+            dataframe = self._update_dataset(dataframe, metadata, column, value, False)
+        return dataframe
+
+    def update_dataset_sells(self, dataframe: DataFrame, metadata: dict, column: str, value: int):
+        if (self.dp is not None) and (self.dp.runmode.value in ('backtest', 'hyperopt')):
+            dataframe = self._update_dataset(dataframe, metadata, column, value, True)
+        return dataframe
 
     def _populate_indicators(self, dataframe: DataFrame, metadata: dict) -> DataFrame:
         """
@@ -780,13 +829,16 @@ class MoniGoManiHyperStrategy(IStrategy):
                     (dataframe['total_buy_signal_strength'] >= self.buy__upwards_trend_total_signal_needed.value)
             ), 'buy'] = 1
 
+        downwards, sideways, upwards = self.get_bitmask_values(self.buy___trades_when_trend.value)
+
         # Override Buy Signal: When configured buy signals can be completely turned off for each kind of trend
-        if not self.buy___trades_when_downwards.value:
+        if not downwards:
             dataframe.loc[dataframe['trend'] == 'downwards', 'buy'] = 0
-        if not self.buy___trades_when_sideways.value:
+        if not sideways:
             dataframe.loc[dataframe['trend'] == 'sideways', 'buy'] = 0
-        if not self.buy___trades_when_upwards.value:
+        if not upwards:
             dataframe.loc[dataframe['trend'] == 'upwards', 'buy'] = 0
+        dataframe = self.update_dataset_buys(dataframe, metadata, "buy", 0)
 
         return dataframe
 
@@ -991,12 +1043,16 @@ class MoniGoManiHyperStrategy(IStrategy):
                     (dataframe['total_sell_signal_strength'] >= self.sell__upwards_trend_total_signal_needed.value)
             ), 'sell'] = 1
 
+        downwards, sideways, upwards = self.get_bitmask_values(self.sell___trades_when_trend.value)
+
         # Override Sell Signal: When configured sell signals can be completely turned off for each kind of trend
-        if not self.sell___trades_when_downwards.value:
+        if not downwards:
             dataframe.loc[dataframe['trend'] == 'downwards', 'sell'] = 0
-        if not self.sell___trades_when_sideways.value:
+        if not sideways:
             dataframe.loc[dataframe['trend'] == 'sideways', 'sell'] = 0
-        if not self.sell___trades_when_upwards.value:
+        if not upwards:
             dataframe.loc[dataframe['trend'] == 'upwards', 'sell'] = 0
+
+        dataframe = self.update_dataset_sells(dataframe, metadata, "sell", 0)
 
         return dataframe

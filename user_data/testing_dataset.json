@@ -1,0 +1,27 @@
+{
+    "dataset": {
+        "train": {
+            "OGN/BTC": [
+                ["2021-03-18", "2021-03-27", "sideways, slight-down, slight u-shape"],
+                ["2021-04-08", "2021-04-14", "strong bearish, spikes"]
+            ],
+            "NKN/BTC": [
+                ["2021-04-08", "2021-04-14", "strong inverted-u-shape"]
+            ],
+            "ENJ/BTC": [
+                ["2021-03-24", "2021-04-07", "slight inverted-u-shape"]
+            ],
+            "KNC/BTC": [
+                ["2020-12-04", "2021-04-14", "volatile start-end-same"]
+            ],
+            "ATOM/BTC": [
+                ["2021-03-19", "2021-04-14", "volatile start-end-same"]
+            ],
+            "BAL/BTC": [
+                ["2021-03-19", "2021-04-13", "volatile end-bearish"]
+            ]
+        },
+        "val": {
+        }
+    }
+}
